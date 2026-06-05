@@ -1,0 +1,54 @@
+{
+  "nav": {
+    "home": "Home",
+    "properties": "Properties",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register"
+  },
+  "hero": {
+    "title": "Find Your Perfect Rural Home",
+    "subtitle": "GPS-powered property discovery across India",
+    "search_placeholder": "Search properties, cities, or localities"
+  },
+  "property": {
+    "rent": "Monthly Rent",
+    "deposit": "Security Deposit",
+    "available": "Available From",
+    "type": "Property Type",
+    "amenities": "Amenities",
+    "distance": "Distance",
+    "rooms": "Rooms",
+    "school": "School",
+    "hospital": "Hospital",
+    "market": "Market",
+    "busstand": "Bus Stand"
+  },
+  "tenant": {
+    "dashboard": "Tenant Dashboard",
+    "properties": "Properties",
+    "bookings": "My Bookings",
+    "payments": "Rent Payments",
+    "agreements": "Agreements",
+    "complaints": "Complaints",
+    "favorites": "Favorites"
+  },
+  "landlord": {
+    "dashboard": "Landlord Dashboard",
+    "properties": "My Properties",
+    "tenants": "Tenants",
+    "payments": "Rent Collection",
+    "analytics": "Analytics",
+    "agreements": "Agreements"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "users": "Users",
+    "properties": "Properties",
+    "bookings": "Bookings",
+    "payments": "Payments",
+    "disputes": "Disputes"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "nav": {
+    "home": "होम",
+    "properties": "संपत्तियां",
+    "dashboard": "डैशबोर्ड",
+    "profile": "प्रोफाइल",
+    "logout": "लॉगआउट",
+    "login": "लॉगिन",
+    "register": "रजिस्टर"
+  },
+  "hero": {
+    "title": "अपना सही ग्रामीण घर खोजें",
+    "subtitle": "भारत भर में GPS-संचालित संपत्ति खोज",
+    "search_placeholder": "संपत्तियां, शहर या इलाके खोजें"
+  },
+  "property": {
+    "rent": "मासिक किराया",
+    "deposit": "सुरक्षा जमा",
+    "available": "यहाँ से उपलब्ध",
+    "type": "संपत्ति का प्रकार",
+    "amenities": "सुविधाएं",
+    "distance": "दूरी",
+    "rooms": "कमरे",
+    "school": "स्कूल",
+    "hospital": "अस्पताल",
+    "market": "बाजार",
+    "busstand": "बस स्टैंड"
+  },
+  "tenant": {
+    "dashboard": "किरायेदार डैशबोर्ड",
+    "properties": "संपत्तियां",
+    "bookings": "मेरी बुकिंग",
+    "payments": "किराया भुगतान",
+    "agreements": "समझौते",
+    "complaints": "शिकायतें",
+    "favorites": "पसंदीदा"
+  },
+  "landlord": {
+    "dashboard": "जमींदार डैशबोर्ड",
+    "properties": "मेरी संपत्तियां",
+    "tenants": "किरायेदार",
+    "payments": "किराया संग्रह",
+    "analytics": "विश्लेषण",
+    "agreements": "समझौते"
+  },
+  "admin": {
+    "dashboard": "प्रशासक डैशबोर्ड",
+    "users": "उपयोगकर्ता",
+    "properties": "संपत्तियां",
+    "bookings": "बुकिंग",
+    "payments": "भुगतान",
+    "disputes": "विवाद"
+  }
+}

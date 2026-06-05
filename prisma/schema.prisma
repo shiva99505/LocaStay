@@ -1,0 +1,497 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ ENUMS ============
+enum UserRole {
+  TENANT
+  LANDLORD
+  ADMIN
+}
+
+enum PropertyType {
+  HOUSE
+  HOSTEL
+  PG
+  ROOM
+  FARM_HOUSE
+  APARTMENT
+  VILLA
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  DELISTED
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DisputeStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+// ============ CORE MODELS ============
+model User {
+  id                    String            @id @default(cuid())
+  clerkId               String            @unique
+  email                 String            @unique
+  phone                 String            @unique
+  firstName             String?
+  lastName              String?
+  role                  UserRole          @default(TENANT)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  
+  // Relations
+  tenantProfile         TenantProfile?
+  landlordProfile       LandlordProfile?
+  profileData           Profile?
+  documents             Document[]
+  sentNotifications     Notification[]
+  reviews               Review[]
+  disputes              Dispute[]
+  complaints            Complaint[]
+  payments              RentPayment[]
+  bookings              Booking[]
+  emergencyContacts     EmergencyContact[]
+  bills                 Bill[]
+
+  @@index([role])
+  @@index([clerkId])
+}
+
+model Profile {
+  id                    String            @id @default(cuid())
+  userId                String            @unique
+  avatar                String?
+  bio                   String?
+  address               String?
+  city                  String?
+  state                 String?
+  pincode               String?
+  aadhar                String?
+  pan                   String?
+  creditScore           Int               @default(0)
+  kyc                   Boolean           @default(false)
+  phone                 String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============ TENANT MODULE ============
+model TenantProfile {
+  id                    String            @id @default(cuid())
+  userId                String            @unique
+  occupationStatus      String?
+  monthlyIncome         Int?
+  familySize            Int?
+  preferredAmenities    String[]          @default([])
+  rentalHistory         RentalHistory[]
+  preferences           String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model RentalHistory {
+  id                    String            @id @default(cuid())
+  tenantId              String
+  propertyId            String?
+  landlordName          String
+  rentAmount            Int
+  startDate             DateTime
+  endDate               DateTime?
+  reason                String?
+  createdAt             DateTime          @default(now())
+
+  tenantProfile         TenantProfile     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property              Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([propertyId])
+}
+
+model SavedProperty {
+  id                    String            @id @default(cuid())
+  userId                String
+  propertyId            String
+  createdAt             DateTime          @default(now())
+
+  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+}
+
+model PropertyView {
+  id                    String            @id @default(cuid())
+  userId                String
+  propertyId            String
+  viewedAt              DateTime          @default(now())
+
+  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([viewedAt])
+}
+
+// ============ LANDLORD MODULE ============
+model LandlordProfile {
+  id                    String            @id @default(cuid())
+  userId                String            @unique
+  businessName          String?
+  totalProperties       Int               @default(0)
+  properties            Property[]
+  bankAccount           String?
+  ifscCode              String?
+  panNumber             String?
+  gstNumber             String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============ PROPERTY MODULE ============
+model Property {
+  id                    String            @id @default(cuid())
+  landlordId            String
+  title                 String
+  description           String?
+  type                  PropertyType
+  status                PropertyStatus    @default(AVAILABLE)
+  rent                  Int
+  deposit               Int
+  address               String
+  city                  String
+  state                 String
+  pincode               String
+  latitude              Float
+  longitude             Float
+  squareFeet            Int?
+  availableFrom         DateTime
+  totalRooms            Int               @default(1)
+  occupiedRooms         Int               @default(0)
+  
+  // Media
+  coverImage            String?
+  images                String[]          @default([])
+  videos                String[]          @default([])
+  
+  // Nearby amenities distance (in km)
+  distanceToSchool      Float?
+  distanceToHospital    Float?
+  distanceToCollege     Float?
+  distanceToMarket      Float?
+  distanceToBusStand    Float?
+  distanceToRailway     Float?
+  distanceToATM         Float?
+  
+  // Metadata
+  views                 Int               @default(0)
+  rating                Float             @default(0)
+  reviewCount           Int               @default(0)
+  isVerified            Boolean           @default(false)
+  isFeatured            Boolean           @default(false)
+  
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  
+  // Relations
+  landlord              LandlordProfile   @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  amenities             Amenity[]         @relation("PropertyAmenities")
+  bookings              Booking[]
+  reviews               Review[]
+  payments              RentPayment[]
+  agreements            Agreement[]
+  savedBy               SavedProperty[]
+  viewedBy              PropertyView[]
+  rentalHistories       RentalHistory[]
+  qrCode                QRCode?
+  
+  @@index([landlordId])
+  @@index([city])
+  @@index([status])
+  @@index([latitude, longitude])
+  @@fulltext([title, description, address, city])
+}
+
+model Amenity {
+  id                    String            @id @default(cuid())
+  name                  String            @unique
+  icon                  String?
+  description           String?
+  
+  properties            Property[]        @relation("PropertyAmenities")
+
+  @@index([name])
+}
+
+// ============ BOOKING MODULE ============
+model Booking {
+  id                    String            @id @default(cuid())
+  tenantId              String
+  propertyId            String
+  status                BookingStatus     @default(PENDING)
+  startDate             DateTime
+  endDate               DateTime?
+  requestedAt           DateTime          @default(now())
+  approvedAt            DateTime?
+  rejectionReason       String?
+  
+  // Relations
+  tenant                User              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  agreement             Agreement?
+  payment               RentPayment?
+
+  @@unique([tenantId, propertyId])
+  @@index([tenantId])
+  @@index([propertyId])
+  @@index([status])
+}
+
+// ============ RENT & PAYMENT MODULE ============
+model RentPayment {
+  id                    String            @id @default(cuid())
+  tenantId              String
+  propertyId            String
+  bookingId             String?
+  amount                Int
+  dueDate               DateTime
+  paidDate              DateTime?
+  status                PaymentStatus     @default(PENDING)
+  paymentMethod         String?           // UPI, NEFT, CASH, etc
+  transactionId         String?
+  razorpayOrderId       String?
+  razorpayPaymentId     String?
+  receiptUrl            String?
+  notes                 String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  tenant                User              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  booking               Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([propertyId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+// ============ AGREEMENT MODULE ============
+model Agreement {
+  id                    String            @id @default(cuid())
+  tenantId              String
+  landlordId            String
+  propertyId            String
+  bookingId             String?
+  documentUrl           String
+  status                VerificationStatus @default(PENDING)
+  signedDate            DateTime?
+  startDate             DateTime
+  endDate               DateTime?
+  renewalDate           DateTime?
+  terms                 String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  booking               Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([landlordId])
+  @@index([propertyId])
+}
+
+// ============ REVIEW & RATING MODULE ============
+model Review {
+  id                    String            @id @default(cuid())
+  propertyId            String
+  tenantId              String
+  rating                Int
+  comment               String?
+  images                String[]          @default([])
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant                User              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([tenantId])
+}
+
+// ============ DOCUMENT MODULE ============
+model Document {
+  id                    String            @id @default(cuid())
+  userId                String
+  type                  String            // AADHAR, PAN, VERIFICATION, etc
+  url                   String
+  status                VerificationStatus @default(PENDING)
+  rejectionReason       String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
+// ============ NOTIFICATION MODULE ============
+model Notification {
+  id                    String            @id @default(cuid())
+  userId                String
+  type                  String            // BOOKING, PAYMENT, AGREEMENT, etc
+  title                 String
+  message               String
+  link                  String?
+  isRead                Boolean           @default(false)
+  createdAt             DateTime          @default(now())
+
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+// ============ DISPUTE MODULE ============
+model Dispute {
+  id                    String            @id @default(cuid())
+  initiatedBy           String
+  status                DisputeStatus     @default(OPEN)
+  title                 String
+  description           String
+  evidenceUrls          String[]          @default([])
+  resolution            String?
+  resolvedAt            DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  user                  User              @relation(fields: [initiatedBy], references: [id], onDelete: Cascade)
+
+  @@index([initiatedBy])
+  @@index([status])
+}
+
+// ============ COMPLAINT MODULE ============
+model Complaint {
+  id                    String            @id @default(cuid())
+  userId                String
+  type                  String            // MAINTENANCE, NEIGHBOR, LANDLORD, etc
+  title                 String
+  description           String
+  attachments           String[]          @default([])
+  status                DisputeStatus     @default(OPEN)
+  resolution            String?
+  resolvedAt            DateTime?
+  createdAt             DateTime          @default(now())
+
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============ EMERGENCY CONTACT ============
+model EmergencyContact {
+  id                    String            @id @default(cuid())
+  userId                String
+  name                  String
+  phone                 String
+  relation              String
+  createdAt             DateTime          @default(now())
+
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============ BILL TRACKING ============
+model Bill {
+  id                    String            @id @default(cuid())
+  userId                String
+  type                  String            // WATER, ELECTRICITY, INTERNET
+  amount                Float
+  dueDate               DateTime
+  paidDate              DateTime?
+  status                PaymentStatus     @default(PENDING)
+  billUrl               String?
+  createdAt             DateTime          @default(now())
+
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
+// ============ QR CODE ============
+model QRCode {
+  id                    String            @id @default(cuid())
+  propertyId            String            @unique
+  code                  String            @unique
+  scans                 Int               @default(0)
+  createdAt             DateTime          @default(now())
+
+  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+}
+
+// ============ ANALYTICS ============
+model Analytics {
+  id                    String            @id @default(cuid())
+  type                  String            // PROPERTY_VIEW, BOOKING, PAYMENT, etc
+  entityId              String
+  metadata              String?           // JSON
+  createdAt             DateTime          @default(now())
+
+  @@index([type])
+  @@index([entityId])
+  @@index([createdAt])
+}
