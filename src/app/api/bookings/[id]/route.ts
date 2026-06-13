@@ -22,7 +22,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
-      property: { select: { id: true, title: true, landlord: { select: { userId: true } } } },
+      property: { select: { id: true, title: true, rent: true, landlord: { select: { userId: true } } } },
     },
   });
 
@@ -44,6 +44,24 @@ export async function PATCH(request: Request, { params }: Params) {
       where: { id: booking.propertyId },
       data: { occupiedRooms: { increment: 1 } },
     });
+
+    // Auto-generate monthly rent payment records for the full booking duration
+    const moveIn = new Date(booking.moveInDate);
+    const rentPayments = Array.from({ length: booking.durationMonths }, (_, i) => {
+      const due = new Date(moveIn.getFullYear(), moveIn.getMonth() + i, moveIn.getDate());
+      const period = `${due.getFullYear()}-${String(due.getMonth() + 1).padStart(2, '0')}`;
+      return {
+        tenantId:   booking.tenantId,
+        propertyId: booking.propertyId,
+        bookingId:  booking.id,
+        period,
+        amount:     booking.property.rent,
+        dueDate:    due,
+        status:     'PENDING',
+      };
+    });
+    await prisma.rentPayment.createMany({ data: rentPayments, skipDuplicates: true });
+
     await prisma.notification.create({
       data: {
         userId:  booking.tenantId,

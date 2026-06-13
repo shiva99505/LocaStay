@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       type:    'BOOKING',
       title:   'New Booking Request',
       message: `${session.user.name} has requested to book "${property.title}".`,
-      link:    `/landlord/bookings?id=${booking.id}`,
+      link:    `/landlord/tenants`,
     },
   });
 
