@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { signIn } from 'next-auth/react';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Lock, Mail, Phone, User2, Home, Building2 } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
@@ -55,14 +55,14 @@ export function RegisterForm() {
         return;
       }
 
-      // Sign in immediately with Supabase after successful registration
-      const supabase = createBrowserClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // Sign in immediately via Auth.js after successful registration
+      const result = await signIn('credentials', {
         email:    values.email,
         password: values.password,
+        redirect: false,
       });
 
-      if (signInError) {
+      if (result?.error) {
         toast.success('Account created — please sign in.');
         router.push('/login');
         return;

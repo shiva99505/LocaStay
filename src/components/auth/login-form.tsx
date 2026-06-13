@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { signIn } from 'next-auth/react';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Lock, Mail, Sparkles } from 'lucide-react';
-import { createBrowserClient } from '@/lib/supabase/client';
 import { useLocale } from '@/components/providers/locale-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,28 +45,25 @@ export function LoginForm() {
 
   const submit = (values: LoginValues, demoLabel?: string) => {
     startTransition(async () => {
-      const supabase = createBrowserClient();
-
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const result = await signIn('credentials', {
         email:    values.email,
         password: values.password,
+        redirect: false,
       });
 
-      if (error || !data.user) {
+      if (result?.error || !result?.ok) {
         toast.error('Could not sign in', {
-          description: error?.message ?? 'Check your email and password and try again.',
+          description: 'Check your email and password and try again.',
         });
         return;
       }
 
-      // Fetch role from profiles to redirect correctly
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
+      // Read role from the fresh session to redirect correctly
+      const sessionRes = await fetch('/api/auth/session');
+      const session = await sessionRes.json().catch(() => ({})) as { user?: { role?: string } };
+      const role = session?.user?.role ?? 'TENANT';
+      const home = ROLE_HOME[role] ?? '/';
 
-      const home = ROLE_HOME[profile?.role ?? 'TENANT'] ?? '/';
       toast.success(demoLabel ? `Signed in as ${demoLabel}` : 'Welcome back!');
       router.push(callbackUrl ?? home);
       router.refresh();

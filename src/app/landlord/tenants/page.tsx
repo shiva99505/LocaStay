@@ -18,8 +18,10 @@ export default async function LandlordTenantsPage() {
   const session = await auth();
   if (!session?.user || session.user.role !== 'LANDLORD') redirect('/login');
 
-  const landlordProfile = await prisma.landlordProfile.findUnique({ where: { userId: session.user.id } });
-  if (!landlordProfile) redirect('/login');
+  let landlordProfile = await prisma.landlordProfile.findUnique({ where: { userId: session.user.id } });
+  if (!landlordProfile) {
+    landlordProfile = await prisma.landlordProfile.create({ data: { userId: session.user.id } });
+  }
 
   const bookings = await prisma.booking.findMany({
     where: { property: { landlordId: landlordProfile.id } },
@@ -68,10 +70,10 @@ export default async function LandlordTenantsPage() {
           <StatusBadge tone={meta.tone} label={meta.label} />
           <LandlordBookingActions bookingId={booking.id} status={booking.status} />
           <Button asChild variant="ghost" size="sm" className="h-7 gap-1 rounded-lg px-2.5 text-xs">
-            <a href={telLink(booking.tenant.phone)}><Phone className="h-3 w-3" /></a>
+            <a href={telLink(booking.tenant.phone)} title={`Call ${booking.tenant.name}`}><Phone className="h-3 w-3" /></a>
           </Button>
           <Button asChild size="sm" className="h-7 gap-1 rounded-lg bg-secondary-600 px-2.5 text-xs hover:bg-secondary-700">
-            <a href={whatsappLink(booking.tenant.phone)} target="_blank" rel="noopener noreferrer"><MessageSquare className="h-3 w-3" /></a>
+            <a href={whatsappLink(booking.tenant.phone)} title={`WhatsApp ${booking.tenant.name}`} target="_blank" rel="noopener noreferrer"><MessageSquare className="h-3 w-3" /></a>
           </Button>
         </div>
       </div>
