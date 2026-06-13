@@ -89,6 +89,20 @@ export async function DELETE(_req: Request, { params }: Params) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  // Block deletion if active bookings exist
+  const activeBooking = await prisma.booking.findFirst({
+    where: { propertyId: id, status: { in: ['PENDING', 'APPROVED'] } },
+    select: { id: true, status: true },
+  });
+  if (activeBooking) {
+    return NextResponse.json(
+      { error: activeBooking.status === 'APPROVED'
+          ? 'Cannot delete a property with an active tenant. Cancel the booking first.'
+          : 'Cannot delete a property with pending booking requests. Reject them first.' },
+      { status: 409 },
+    );
+  }
+
   await prisma.property.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

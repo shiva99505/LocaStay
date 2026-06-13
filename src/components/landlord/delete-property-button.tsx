@@ -21,11 +21,13 @@ export function DeletePropertyButton({ propertyId, propertyTitle }: { propertyId
         const res = await fetch(`/api/properties/${propertyId}`, { method: 'DELETE' });
         const data = await res.json() as { error?: string };
         if (!res.ok) throw new Error(data.error ?? 'Failed to delete property');
-        toast.success('Property delisted successfully');
+        toast.success('Property deleted successfully');
         setOpen(false);
+        router.push('/landlord/properties');
         router.refresh();
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Something went wrong');
+        setOpen(false);
+        toast.error(err instanceof Error ? err.message : 'Something went wrong', { duration: 5000 });
       }
     });
   }
@@ -46,7 +48,8 @@ export function DeletePropertyButton({ propertyId, propertyTitle }: { propertyId
           <DialogHeader>
             <DialogTitle>Delete property?</DialogTitle>
             <DialogDescription>
-              <strong>&ldquo;{propertyTitle}&rdquo;</strong> will be delisted and hidden from search. Active tenants and bookings will not be affected.
+              <strong>&ldquo;{propertyTitle}&rdquo;</strong> will be permanently deleted and removed from all listings and search results.
+              <br /><span className="mt-1 block text-xs text-amber-600 dark:text-amber-400">Note: Properties with pending or active bookings cannot be deleted. Resolve all bookings first.</span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

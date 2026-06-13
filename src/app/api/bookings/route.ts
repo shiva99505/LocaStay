@@ -37,6 +37,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'This property is not available for booking.' }, { status: 409 });
   }
 
+  // Backend validation: tenant must have paid ₹3 to unlock this property
+  const unlock = await prisma.propertyUnlock.findUnique({
+    where: { tenantId_propertyId: { tenantId: session.user.id, propertyId } },
+  });
+  if (!unlock) {
+    return NextResponse.json({ error: 'Please unlock this property first (₹3 fee required).' }, { status: 402 });
+  }
+
   const existing = await prisma.booking.findFirst({
     where: { tenantId: session.user.id, propertyId, status: { in: ['PENDING', 'APPROVED'] } },
   });

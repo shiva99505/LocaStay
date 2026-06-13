@@ -62,7 +62,7 @@ export function BookPropertyForm({ propertyId, propertyTitle, rent }: BookProper
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             propertyId,
-            moveInDate,
+            moveInDate: new Date(moveInDate + 'T00:00:00').toISOString(),
             durationMonths: Number(durationMonths),
             message: message.trim() || undefined,
           }),

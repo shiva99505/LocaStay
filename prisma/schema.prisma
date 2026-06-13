@@ -39,7 +39,6 @@ model User {
 
   profile          Profile?
   landlordProfile  LandlordProfile?
-  documents        Document[]
   notifications    Notification[]
   reviews          Review[]
   complaints       Complaint[]
@@ -76,11 +75,6 @@ model Profile {
   occupation      String?
   monthlyIncome   Int?
   familySize      Int?
-  /// kycStatus: PENDING | VERIFIED | REJECTED
-  kycStatus       String   @default("PENDING")
-  aadhaarNumber   String?
-  aadhaarUrl      String?
-  panNumber       String?
   creditScore     Int      @default(650)
   preferredAmenities String @default("[]") // JSON string[]
   createdAt       DateTime @default(now())
@@ -412,29 +406,6 @@ model Review {
 
   @@index([propertyId])
   @@index([tenantId])
-}
-
-// ======================================================================
-// KYC / DOCUMENTS
-// ======================================================================
-
-/// type: AADHAAR | PAN | POLICE_VERIFICATION | INCOME_PROOF | PROPERTY_DEED
-/// status: PENDING | VERIFIED | REJECTED
-model Document {
-  id              String   @id @default(cuid())
-  userId          String
-  type            String
-  url             String
-  number          String?
-  status          String   @default("PENDING")
-  rejectionReason String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([type])
 }
 
 // ======================================================================
