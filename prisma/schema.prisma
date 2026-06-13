@@ -1,162 +1,243 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// LocaStay — Prisma schema
+//
+// Local development runs on SQLite (zero-setup, file-based) so the whole
+// product works out of the box with `npm run db:reset`. The schema is kept
+// structurally Postgres-ready: switch the datasource `provider` to
+// "postgresql", point DATABASE_URL at your instance, re-introduce native
+// `enum` types (commented inline next to each string field below) and
+// `String[]` columns where this file uses JSON-encoded strings, then run
+// `prisma migrate deploy`. See README → "Going to production".
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-// ============ ENUMS ============
-enum UserRole {
-  TENANT
-  LANDLORD
-  ADMIN
-}
+// ======================================================================
+// CORE — Users, Profiles, Auth
+// ======================================================================
 
-enum PropertyType {
-  HOUSE
-  HOSTEL
-  PG
-  ROOM
-  FARM_HOUSE
-  APARTMENT
-  VILLA
-}
-
-enum PropertyStatus {
-  AVAILABLE
-  OCCUPIED
-  MAINTENANCE
-  DELISTED
-}
-
-enum BookingStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
-  COMPLETED
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
-enum VerificationStatus {
-  PENDING
-  VERIFIED
-  REJECTED
-}
-
-enum DisputeStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-}
-
-// ============ CORE MODELS ============
+/// role: TENANT | LANDLORD | ADMIN
 model User {
-  id                    String            @id @default(cuid())
-  clerkId               String            @unique
-  email                 String            @unique
-  phone                 String            @unique
-  firstName             String?
-  lastName              String?
-  role                  UserRole          @default(TENANT)
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-  
-  // Relations
-  tenantProfile         TenantProfile?
-  landlordProfile       LandlordProfile?
-  profileData           Profile?
-  documents             Document[]
-  sentNotifications     Notification[]
-  reviews               Review[]
-  disputes              Dispute[]
-  complaints            Complaint[]
-  payments              RentPayment[]
-  bookings              Booking[]
-  emergencyContacts     EmergencyContact[]
-  bills                 Bill[]
+  id               String    @id @default(cuid())
+  name             String
+  email            String    @unique
+  phone            String    @unique
+  passwordHash     String
+  role             String    @default("TENANT")
+  avatar           String?
+  isVerified       Boolean   @default(false)
+  isSuspended      Boolean   @default(false)
+  language         String    @default("en")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  lastLoginAt      DateTime?
+
+  profile          Profile?
+  landlordProfile  LandlordProfile?
+  documents        Document[]
+  notifications    Notification[]
+  reviews          Review[]
+  complaints       Complaint[]
+  payments         RentPayment[]
+  bookings         Booking[]
+  emergencyContacts EmergencyContact[]
+  bills            Bill[]
+  savedProperties  SavedProperty[]
+  propertyViews    PropertyView[]
+  comparisons      ComparisonList[]
+  supportTickets   SupportTicket[]
+  ticketMessages   TicketMessage[]
+  fraudFlags       FraudFlag[]      @relation("FlaggedEntity")
+  auditLogs        AuditLog[]
+  leadsAsTenant    Lead[]           @relation("LeadTenant")
+  propertyUnlocks  PropertyUnlock[]
 
   @@index([role])
-  @@index([clerkId])
+  @@index([email])
+  @@index([phone])
 }
 
 model Profile {
-  id                    String            @id @default(cuid())
-  userId                String            @unique
-  avatar                String?
-  bio                   String?
-  address               String?
-  city                  String?
-  state                 String?
-  pincode               String?
-  aadhar                String?
-  pan                   String?
-  creditScore           Int               @default(0)
-  kyc                   Boolean           @default(false)
-  phone                 String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  bio             String?
+  address         String?
+  village         String?
+  city            String?
+  district        String?
+  state           String?
+  pincode         String?
+  dob             DateTime?
+  occupation      String?
+  monthlyIncome   Int?
+  familySize      Int?
+  /// kycStatus: PENDING | VERIFIED | REJECTED
+  kycStatus       String   @default("PENDING")
+  aadhaarNumber   String?
+  aadhaarUrl      String?
+  panNumber       String?
+  creditScore     Int      @default(650)
+  preferredAmenities String @default("[]") // JSON string[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-// ============ TENANT MODULE ============
-model TenantProfile {
-  id                    String            @id @default(cuid())
-  userId                String            @unique
-  occupationStatus      String?
-  monthlyIncome         Int?
-  familySize            Int?
-  preferredAmenities    String[]          @default([])
-  rentalHistory         RentalHistory[]
-  preferences           String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-
-  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rentalHistory   RentalHistory[]
 
   @@index([userId])
 }
 
 model RentalHistory {
-  id                    String            @id @default(cuid())
-  tenantId              String
-  propertyId            String?
-  landlordName          String
-  rentAmount            Int
-  startDate             DateTime
-  endDate               DateTime?
-  reason                String?
-  createdAt             DateTime          @default(now())
+  id            String    @id @default(cuid())
+  profileId     String
+  propertyId    String?
+  landlordName  String
+  address       String
+  rentAmount    Int
+  startDate     DateTime
+  endDate       DateTime?
+  reasonForLeaving String?
+  rating        Int?      // landlord's rating of this tenancy
+  createdAt     DateTime  @default(now())
 
-  tenantProfile         TenantProfile     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property              Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  profile       Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  property      Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
 
-  @@index([tenantId])
-  @@index([propertyId])
+  @@index([profileId])
+}
+
+model LandlordProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  businessName    String?
+  bio             String?
+  address         String?
+  city            String?
+  state           String?
+  bankAccount     String?
+  ifscCode        String?
+  upiId           String?
+  panNumber       String?
+  gstNumber       String?
+  /// verificationStatus: PENDING | VERIFIED | REJECTED
+  verificationStatus String @default("PENDING")
+  responseRate    Int      @default(95)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  properties      Property[]
+  expenses        Expense[]
+  leads           Lead[]
+  blogPosts       BlogPost[]
+
+  @@index([userId])
+}
+
+// ======================================================================
+// PROPERTY MODULE
+// ======================================================================
+
+/// type: HOUSE | HOSTEL | PG | ROOM | FARM_HOUSE | APARTMENT | VILLA
+/// status: PENDING | AVAILABLE | OCCUPIED | MAINTENANCE | DELISTED | REJECTED
+model Property {
+  id                  String    @id @default(cuid())
+  landlordId          String
+  title               String
+  description         String?
+  type                String
+  status              String    @default("PENDING")
+  rent                Int
+  deposit             Int
+  address             String
+  village             String?
+  city                String
+  district            String?
+  state               String
+  pincode             String
+  latitude            Float
+  longitude           Float
+  squareFeet          Int?
+  availableFrom       DateTime  @default(now())
+  totalRooms          Int       @default(1)
+  occupiedRooms       Int       @default(0)
+
+  // Media (JSON-encoded string[])
+  coverImage          String?
+  images              String    @default("[]")
+  videos              String    @default("[]")
+  documents           String    @default("[]")
+  virtualTourUrl      String?
+
+  // Nearby amenity distances (km)
+  distanceToSchool    Float?
+  distanceToHospital  Float?
+  distanceToCollege   Float?
+  distanceToMarket    Float?
+  distanceToBusStand  Float?
+  distanceToRailway   Float?
+  distanceToATM       Float?
+
+  // Pricing intelligence
+  aiSuggestedRent     Int?
+  performanceScore    Int       @default(0)
+
+  // Metadata
+  views               Int       @default(0)
+  rating              Float     @default(0)
+  reviewCount         Int       @default(0)
+  isVerified          Boolean   @default(false)
+  isFeatured          Boolean   @default(false)
+  rejectionReason     String?
+  publishedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  landlord            LandlordProfile  @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  amenities           Amenity[]        @relation("PropertyAmenities")
+  bookings            Booking[]
+  reviews             Review[]
+  payments            RentPayment[]
+  agreements          Agreement[]
+  savedBy             SavedProperty[]
+  viewedBy            PropertyView[]
+  rentalHistories     RentalHistory[]
+  qrCode              QRCode?
+  maintenanceRequests MaintenanceRequest[]
+  expenses            Expense[]
+  leads               Lead[]
+  comparisons         ComparisonItem[]
+  fraudFlags          FraudFlag[]      @relation("FlaggedProperty")
+  unlocks             PropertyUnlock[]
+
+  @@index([landlordId])
+  @@index([city])
+  @@index([status])
+  @@index([type])
+  @@index([latitude, longitude])
+}
+
+model Amenity {
+  id          String     @id @default(cuid())
+  key         String     @unique
+  label       String
+  icon        String?
+  properties  Property[] @relation("PropertyAmenities")
 }
 
 model SavedProperty {
-  id                    String            @id @default(cuid())
-  userId                String
-  propertyId            String
-  createdAt             DateTime          @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String
+  createdAt  DateTime @default(now())
 
-  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([userId, propertyId])
   @@index([userId])
@@ -164,158 +245,114 @@ model SavedProperty {
 }
 
 model PropertyView {
-  id                    String            @id @default(cuid())
-  userId                String
-  propertyId            String
-  viewedAt              DateTime          @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String
+  viewedAt   DateTime @default(now())
 
-  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([propertyId])
   @@index([viewedAt])
 }
 
-// ============ LANDLORD MODULE ============
-model LandlordProfile {
-  id                    String            @id @default(cuid())
-  userId                String            @unique
-  businessName          String?
-  totalProperties       Int               @default(0)
-  properties            Property[]
-  bankAccount           String?
-  ifscCode              String?
-  panNumber             String?
-  gstNumber             String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+model ComparisonList {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @default("My Comparison")
+  createdAt DateTime @default(now())
 
-  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ComparisonItem[]
 
   @@index([userId])
 }
 
-// ============ PROPERTY MODULE ============
-model Property {
-  id                    String            @id @default(cuid())
-  landlordId            String
-  title                 String
-  description           String?
-  type                  PropertyType
-  status                PropertyStatus    @default(AVAILABLE)
-  rent                  Int
-  deposit               Int
-  address               String
-  city                  String
-  state                 String
-  pincode               String
-  latitude              Float
-  longitude             Float
-  squareFeet            Int?
-  availableFrom         DateTime
-  totalRooms            Int               @default(1)
-  occupiedRooms         Int               @default(0)
-  
-  // Media
-  coverImage            String?
-  images                String[]          @default([])
-  videos                String[]          @default([])
-  
-  // Nearby amenities distance (in km)
-  distanceToSchool      Float?
-  distanceToHospital    Float?
-  distanceToCollege     Float?
-  distanceToMarket      Float?
-  distanceToBusStand    Float?
-  distanceToRailway     Float?
-  distanceToATM         Float?
-  
-  // Metadata
-  views                 Int               @default(0)
-  rating                Float             @default(0)
-  reviewCount           Int               @default(0)
-  isVerified            Boolean           @default(false)
-  isFeatured            Boolean           @default(false)
-  
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-  
-  // Relations
-  landlord              LandlordProfile   @relation(fields: [landlordId], references: [id], onDelete: Cascade)
-  amenities             Amenity[]         @relation("PropertyAmenities")
-  bookings              Booking[]
-  reviews               Review[]
-  payments              RentPayment[]
-  agreements            Agreement[]
-  savedBy               SavedProperty[]
-  viewedBy              PropertyView[]
-  rentalHistories       RentalHistory[]
-  qrCode                QRCode?
-  
-  @@index([landlordId])
-  @@index([city])
-  @@index([status])
-  @@index([latitude, longitude])
-  @@fulltext([title, description, address, city])
+model ComparisonItem {
+  id         String @id @default(cuid())
+  listId     String
+  propertyId String
+
+  list     ComparisonList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  property Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, propertyId])
 }
 
-model Amenity {
-  id                    String            @id @default(cuid())
-  name                  String            @unique
-  icon                  String?
-  description           String?
-  
-  properties            Property[]        @relation("PropertyAmenities")
+/// Tracks ₹3 platform fee paid by a tenant to unlock contact+booking for a property.
+/// Once unlocked, both contact and booking are free for that specific property.
+model PropertyUnlock {
+  id         String   @id @default(cuid())
+  tenantId   String
+  propertyId String
+  amount     Int      @default(3)
+  paidAt     DateTime @default(now())
 
-  @@index([name])
-}
-
-// ============ BOOKING MODULE ============
-model Booking {
-  id                    String            @id @default(cuid())
-  tenantId              String
-  propertyId            String
-  status                BookingStatus     @default(PENDING)
-  startDate             DateTime
-  endDate               DateTime?
-  requestedAt           DateTime          @default(now())
-  approvedAt            DateTime?
-  rejectionReason       String?
-  
-  // Relations
-  tenant                User              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  agreement             Agreement?
-  payment               RentPayment?
+  user     User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, propertyId])
+  @@index([tenantId])
+  @@index([propertyId])
+}
+
+// ======================================================================
+// BOOKING & TENANCY
+// ======================================================================
+
+/// status: PENDING | APPROVED | REJECTED | CANCELLED | COMPLETED
+model Booking {
+  id              String    @id @default(cuid())
+  tenantId        String
+  propertyId      String
+  status          String    @default("PENDING")
+  moveInDate      DateTime
+  durationMonths  Int       @default(11)
+  message         String?
+  rejectionReason String?
+  requestedAt     DateTime  @default(now())
+  respondedAt     DateTime?
+
+  tenant    User       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property  Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  agreement Agreement?
+  payments  RentPayment[]
+
   @@index([tenantId])
   @@index([propertyId])
   @@index([status])
 }
 
-// ============ RENT & PAYMENT MODULE ============
-model RentPayment {
-  id                    String            @id @default(cuid())
-  tenantId              String
-  propertyId            String
-  bookingId             String?
-  amount                Int
-  dueDate               DateTime
-  paidDate              DateTime?
-  status                PaymentStatus     @default(PENDING)
-  paymentMethod         String?           // UPI, NEFT, CASH, etc
-  transactionId         String?
-  razorpayOrderId       String?
-  razorpayPaymentId     String?
-  receiptUrl            String?
-  notes                 String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+// ======================================================================
+// RENT, PAYMENTS & RECEIPTS
+// ======================================================================
 
-  tenant                User              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  booking               Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+/// status: PENDING | PAID | OVERDUE | FAILED | REFUNDED
+model RentPayment {
+  id                String    @id @default(cuid())
+  tenantId          String
+  propertyId        String
+  bookingId         String?
+  period            String    // e.g. "2026-06"
+  amount            Int
+  lateFee           Int       @default(0)
+  dueDate           DateTime
+  paidDate          DateTime?
+  status            String    @default("PENDING")
+  method            String?   // UPI | NEFT | CASH | CARD
+  transactionId     String?
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  receiptNumber     String?   @unique
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  tenant   User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  booking  Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([propertyId])
@@ -323,175 +360,400 @@ model RentPayment {
   @@index([dueDate])
 }
 
-// ============ AGREEMENT MODULE ============
-model Agreement {
-  id                    String            @id @default(cuid())
-  tenantId              String
-  landlordId            String
-  propertyId            String
-  bookingId             String?
-  documentUrl           String
-  status                VerificationStatus @default(PENDING)
-  signedDate            DateTime?
-  startDate             DateTime
-  endDate               DateTime?
-  renewalDate           DateTime?
-  terms                 String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+// ======================================================================
+// AGREEMENTS
+// ======================================================================
 
-  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  booking               Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+/// status: DRAFT | PENDING_SIGNATURE | ACTIVE | EXPIRED | TERMINATED
+model Agreement {
+  id            String    @id @default(cuid())
+  tenantId      String
+  landlordId    String
+  propertyId    String
+  bookingId     String?   @unique
+  rentAmount    Int
+  depositAmount Int
+  startDate     DateTime
+  endDate       DateTime?
+  renewalDate   DateTime?
+  terms         String    @default("[]") // JSON string[]
+  status        String    @default("DRAFT")
+  tenantSignedAt   DateTime?
+  landlordSignedAt DateTime?
+  documentUrl   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  booking  Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([landlordId])
   @@index([propertyId])
 }
 
-// ============ REVIEW & RATING MODULE ============
-model Review {
-  id                    String            @id @default(cuid())
-  propertyId            String
-  tenantId              String
-  rating                Int
-  comment               String?
-  images                String[]          @default([])
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+// ======================================================================
+// REVIEWS
+// ======================================================================
 
-  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant                User              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+model Review {
+  id           String   @id @default(cuid())
+  propertyId   String
+  tenantId     String
+  rating       Int
+  comment      String?
+  images       String   @default("[]")
+  landlordReply String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
   @@index([tenantId])
 }
 
-// ============ DOCUMENT MODULE ============
-model Document {
-  id                    String            @id @default(cuid())
-  userId                String
-  type                  String            // AADHAR, PAN, VERIFICATION, etc
-  url                   String
-  status                VerificationStatus @default(PENDING)
-  rejectionReason       String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+// ======================================================================
+// KYC / DOCUMENTS
+// ======================================================================
 
-  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+/// type: AADHAAR | PAN | POLICE_VERIFICATION | INCOME_PROOF | PROPERTY_DEED
+/// status: PENDING | VERIFIED | REJECTED
+model Document {
+  id              String   @id @default(cuid())
+  userId          String
+  type            String
+  url             String
+  number          String?
+  status          String   @default("PENDING")
+  rejectionReason String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([type])
 }
 
-// ============ NOTIFICATION MODULE ============
-model Notification {
-  id                    String            @id @default(cuid())
-  userId                String
-  type                  String            // BOOKING, PAYMENT, AGREEMENT, etc
-  title                 String
-  message               String
-  link                  String?
-  isRead                Boolean           @default(false)
-  createdAt             DateTime          @default(now())
+// ======================================================================
+// NOTIFICATIONS
+// ======================================================================
 
-  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+/// type: BOOKING | PAYMENT | AGREEMENT | KYC | SYSTEM | COMPLAINT | MAINTENANCE | LEAD
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRead])
 }
 
-// ============ DISPUTE MODULE ============
-model Dispute {
-  id                    String            @id @default(cuid())
-  initiatedBy           String
-  status                DisputeStatus     @default(OPEN)
-  title                 String
-  description           String
-  evidenceUrls          String[]          @default([])
-  resolution            String?
-  resolvedAt            DateTime?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+// ======================================================================
+// COMPLAINTS, EMERGENCY, BILLS
+// ======================================================================
 
-  user                  User              @relation(fields: [initiatedBy], references: [id], onDelete: Cascade)
-
-  @@index([initiatedBy])
-  @@index([status])
-}
-
-// ============ COMPLAINT MODULE ============
+/// category: MAINTENANCE | NEIGHBOR | LANDLORD | SAFETY | BILLING | OTHER
+/// status: OPEN | IN_PROGRESS | RESOLVED | CLOSED
 model Complaint {
-  id                    String            @id @default(cuid())
-  userId                String
-  type                  String            // MAINTENANCE, NEIGHBOR, LANDLORD, etc
-  title                 String
-  description           String
-  attachments           String[]          @default([])
-  status                DisputeStatus     @default(OPEN)
-  resolution            String?
-  resolvedAt            DateTime?
-  createdAt             DateTime          @default(now())
+  id          String    @id @default(cuid())
+  userId      String
+  propertyId  String?
+  category    String
+  title       String
+  description String
+  attachments String    @default("[]")
+  status      String    @default("OPEN")
+  priority    String    @default("MEDIUM")
+  resolution  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
 
-  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
 }
 
-// ============ EMERGENCY CONTACT ============
 model EmergencyContact {
-  id                    String            @id @default(cuid())
-  userId                String
-  name                  String
-  phone                 String
-  relation              String
-  createdAt             DateTime          @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  phone     String
+  relation  String
+  createdAt DateTime @default(now())
 
-  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-// ============ BILL TRACKING ============
+/// type: WATER | ELECTRICITY | INTERNET | GAS | MAINTENANCE
+/// status: PENDING | PAID | OVERDUE
 model Bill {
-  id                    String            @id @default(cuid())
-  userId                String
-  type                  String            // WATER, ELECTRICITY, INTERNET
-  amount                Float
-  dueDate               DateTime
-  paidDate              DateTime?
-  status                PaymentStatus     @default(PENDING)
-  billUrl               String?
-  createdAt             DateTime          @default(now())
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  provider  String?
+  amount    Float
+  dueDate   DateTime
+  paidDate  DateTime?
+  status    String    @default("PENDING")
+  billNumber String?
+  createdAt DateTime  @default(now())
 
-  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([type])
 }
 
-// ============ QR CODE ============
-model QRCode {
-  id                    String            @id @default(cuid())
-  propertyId            String            @unique
-  code                  String            @unique
-  scans                 Int               @default(0)
-  createdAt             DateTime          @default(now())
+// ======================================================================
+// QR CODES
+// ======================================================================
 
-  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+model QRCode {
+  id         String   @id @default(cuid())
+  propertyId String   @unique
+  code       String   @unique
+  scans      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+// ======================================================================
+// LANDLORD OPERATIONS — Maintenance, Expenses, Leads
+// ======================================================================
+
+/// category: PLUMBING | ELECTRICAL | CLEANING | STRUCTURAL | APPLIANCE | OTHER
+/// priority: LOW | MEDIUM | HIGH | URGENT
+/// status: OPEN | ASSIGNED | IN_PROGRESS | RESOLVED | CLOSED
+model MaintenanceRequest {
+  id          String    @id @default(cuid())
+  propertyId  String
+  tenantId    String?
+  category    String
+  title       String
+  description String
+  images      String    @default("[]")
+  priority    String    @default("MEDIUM")
+  status      String    @default("OPEN")
+  cost        Int?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
+  @@index([status])
 }
 
-// ============ ANALYTICS ============
-model Analytics {
-  id                    String            @id @default(cuid())
-  type                  String            // PROPERTY_VIEW, BOOKING, PAYMENT, etc
-  entityId              String
-  metadata              String?           // JSON
-  createdAt             DateTime          @default(now())
+/// category: REPAIR | TAX | INSURANCE | UTILITIES | STAFF | MARKETING | OTHER
+model Expense {
+  id          String   @id @default(cuid())
+  landlordId  String
+  propertyId  String?
+  category    String
+  amount      Int
+  date        DateTime @default(now())
+  note        String?
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+
+  landlord LandlordProfile @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  property Property?       @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([landlordId])
+}
+
+/// source: WHATSAPP | CALL | SITE_VISIT | WALK_IN
+/// status: NEW | CONTACTED | QUALIFIED | CONVERTED | LOST
+model Lead {
+  id          String   @id @default(cuid())
+  landlordId  String
+  propertyId  String?
+  tenantId    String?
+  name        String
+  phone       String
+  message     String?
+  source      String   @default("SITE_VISIT")
+  status      String   @default("NEW")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  landlord LandlordProfile @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  property Property?       @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  tenant   User?           @relation("LeadTenant", fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([landlordId])
+  @@index([status])
+}
+
+// ======================================================================
+// CONTENT MANAGEMENT (Admin)
+// ======================================================================
+
+model Banner {
+  id        String    @id @default(cuid())
+  title     String
+  subtitle  String?
+  imageUrl  String
+  link      String?
+  position  Int       @default(0)
+  isActive  Boolean   @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+/// audience: ALL | TENANT | LANDLORD
+model Notice {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  audience  String   @default("ALL")
+  isPinned  Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model BlogPost {
+  id           String    @id @default(cuid())
+  landlordId   String?
+  title        String
+  slug         String    @unique
+  excerpt      String?
+  content      String
+  coverImage   String?
+  isPublished  Boolean   @default(false)
+  publishedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  author LandlordProfile? @relation(fields: [landlordId], references: [id], onDelete: SetNull)
+}
+
+// ======================================================================
+// SUPPORT CENTER
+// ======================================================================
+
+/// category: TECHNICAL | BILLING | BOOKING | ACCOUNT | OTHER
+/// status: OPEN | IN_PROGRESS | RESOLVED | CLOSED
+/// priority: LOW | MEDIUM | HIGH | URGENT
+model SupportTicket {
+  id          String   @id @default(cuid())
+  userId      String
+  subject     String
+  category    String   @default("OTHER")
+  description String
+  status      String   @default("OPEN")
+  priority    String   @default("MEDIUM")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages TicketMessage[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  senderId  String
+  message   String
+  isStaff   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+// ======================================================================
+// AI / TRUST & SAFETY (Admin)
+// ======================================================================
+
+/// entityType: USER | PROPERTY | BOOKING | REVIEW
+/// status: FLAGGED | UNDER_REVIEW | CONFIRMED | CLEARED
+model FraudFlag {
+  id          String   @id @default(cuid())
+  entityType  String
+  userId      String?
+  propertyId  String?
+  riskScore   Int      @default(50)
+  reasons     String   @default("[]") // JSON string[]
+  status      String   @default("FLAGGED")
+  reviewedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User?     @relation("FlaggedEntity", fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation("FlaggedProperty", fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([entityType])
+  @@index([status])
+}
+
+// ======================================================================
+// LOCAL SERVICES DIRECTORY
+// ======================================================================
+
+/// category: HOSPITAL | PHARMACY | GROCERY | ELECTRICIAN | PLUMBER | TRANSPORT | POLICE | SCHOOL | BANK
+model LocalService {
+  id         String  @id @default(cuid())
+  name       String
+  category   String
+  phone      String?
+  address    String?
+  city       String
+  latitude   Float?
+  longitude  Float?
+  rating     Float   @default(0)
+  isVerified Boolean @default(false)
+}
+
+// ======================================================================
+// ANALYTICS & AUDIT
+// ======================================================================
+
+/// type: PROPERTY_VIEW | SEARCH | BOOKING | PAYMENT | LOGIN
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  type      String
+  entityId  String?
+  metadata  String?  // JSON string
+  createdAt DateTime @default(now())
 
   @@index([type])
-  @@index([entityId])
   @@index([createdAt])
+}
+
+/// action: APPROVE_LISTING | REJECT_LISTING | SUSPEND_USER | VERIFY_KYC | FEATURE_LISTING | ...
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String?
+  createdAt  DateTime @default(now())
+
+  actor User @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([actorId])
+  @@index([action])
 }
