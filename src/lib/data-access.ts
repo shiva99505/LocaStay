@@ -60,15 +60,14 @@ export const getUnreadNotificationsCount = cache(async (userId: string) => {
 export const getAdminCounts = cache(async () => {
   const [
     totalUsers, totalTenants, totalLandlords, totalProperties,
-    pendingProperties, pendingKyc, activeBookings,
+    pendingProperties, activeBookings,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { role: 'TENANT' } }),
     prisma.user.count({ where: { role: 'LANDLORD' } }),
     prisma.property.count(),
     prisma.property.count({ where: { status: 'PENDING' } }),
-    prisma.document.count({ where: { status: 'PENDING' } }),
     prisma.booking.count({ where: { status: 'ACTIVE' } }),
   ]);
-  return { totalUsers, totalTenants, totalLandlords, totalProperties, pendingProperties, pendingKyc, activeBookings };
+  return { totalUsers, totalTenants, totalLandlords, totalProperties, pendingProperties, activeBookings };
 });

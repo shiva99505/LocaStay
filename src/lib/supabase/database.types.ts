@@ -7,7 +7,6 @@
 
 // ─── Enum literals ───────────────────────────────────────────────────────────
 export type UserRole           = 'TENANT' | 'LANDLORD' | 'ADMIN';
-export type KycStatus          = 'PENDING' | 'VERIFIED' | 'REJECTED';
 export type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
 export type PropertyType       = 'HOUSE' | 'HOSTEL' | 'PG' | 'ROOM' | 'FARM_HOUSE' | 'APARTMENT' | 'VILLA';
 export type PropertyStatus     = 'PENDING' | 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'DELISTED' | 'REJECTED';
@@ -16,7 +15,7 @@ export type PaymentStatus      = 'PENDING' | 'PAID' | 'OVERDUE' | 'FAILED' | 'RE
 export type PaymentMethod      = 'UPI' | 'NEFT' | 'CASH' | 'CARD';
 export type AgreementStatus    = 'DRAFT' | 'PENDING_SIGNATURE' | 'ACTIVE' | 'EXPIRED' | 'TERMINATED';
 export type DocumentType       = 'AADHAAR' | 'PAN' | 'POLICE_VERIFICATION' | 'INCOME_PROOF' | 'PROPERTY_DEED';
-export type NotificationType   = 'BOOKING' | 'PAYMENT' | 'AGREEMENT' | 'KYC' | 'SYSTEM' | 'COMPLAINT' | 'MAINTENANCE' | 'LEAD';
+export type NotificationType   = 'BOOKING' | 'PAYMENT' | 'AGREEMENT' | 'SYSTEM' | 'COMPLAINT' | 'MAINTENANCE' | 'LEAD';
 export type ComplaintCategory  = 'MAINTENANCE' | 'NEIGHBOR' | 'LANDLORD' | 'SAFETY' | 'BILLING' | 'OTHER';
 export type ComplaintStatus    = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
 export type PriorityLevel      = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -54,7 +53,6 @@ export interface Profile {
   occupation: string | null;
   monthly_income: number | null;
   family_size: number | null;
-  kyc_status: KycStatus;
   aadhaar_number: string | null;
   aadhaar_url: string | null;
   pan_number: string | null;
@@ -202,7 +200,7 @@ export interface Document {
   type: DocumentType;
   url: string;
   number: string | null;
-  status: KycStatus;
+  status: VerificationStatus;
   rejection_reason: string | null;
   created_at: string;
   updated_at: string;
@@ -367,7 +365,7 @@ export interface Database {
     Functions: Record<string, never>;
     Enums: {
       user_role: UserRole;
-      kyc_status: KycStatus;
+      verification_status: VerificationStatus;
       property_type: PropertyType;
       property_status: PropertyStatus;
       booking_status: BookingStatus;

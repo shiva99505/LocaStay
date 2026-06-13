@@ -24,7 +24,7 @@ export default async function LandlordTenantsPage() {
   const bookings = await prisma.booking.findMany({
     where: { property: { landlordId: landlordProfile.id } },
     include: {
-      tenant: { select: { id: true, name: true, phone: true, avatar: true, isVerified: true, profile: { select: { kycStatus: true, occupation: true } } } },
+      tenant: { select: { id: true, name: true, phone: true, avatar: true, isVerified: true, profile: { select: { occupation: true } } } },
       property: { select: { title: true, city: true } },
       agreement: { select: { status: true, rentAmount: true, startDate: true } },
       payments: { where: { status: { in: ['PENDING', 'OVERDUE'] } }, select: { id: true, amount: true, status: true } },

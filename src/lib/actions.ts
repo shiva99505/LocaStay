@@ -503,7 +503,7 @@ export async function adminUpdateUserStatus(
   await prisma.notification.create({
     data: {
       userId,
-      type: 'KYC',
+      type: 'SYSTEM',
       title: notifMsg[action].title,
       message: notifMsg[action].message,
     },
@@ -579,7 +579,7 @@ export async function adminUpdateDocumentStatus(
   await prisma.notification.create({
     data: {
       userId: doc.userId,
-      type: 'KYC',
+      type: 'SYSTEM',
       title: status === 'VERIFIED' ? 'Document Verified' : 'Document Rejected',
       message:
         status === 'VERIFIED'

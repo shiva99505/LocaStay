@@ -13,7 +13,6 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
   BOOKING: { label: 'Booking', color: 'bg-blue-500' },
   PAYMENT: { label: 'Payment', color: 'bg-secondary-500' },
   AGREEMENT: { label: 'Agreement', color: 'bg-primary-600' },
-  KYC: { label: 'KYC', color: 'bg-amber-500' },
   SYSTEM: { label: 'System', color: 'bg-muted-foreground' },
   COMPLAINT: { label: 'Complaint', color: 'bg-orange-500' },
   MAINTENANCE: { label: 'Maintenance', color: 'bg-red-500' },

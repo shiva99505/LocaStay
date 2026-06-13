@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   // Welcome notification
   const welcomeMsg =
     role === 'TENANT'
-      ? { title: 'Welcome to LocaStay!', message: 'Complete your KYC to unlock instant booking approvals.', link: '/tenant/profile' }
+      ? { title: 'Welcome to LocaStay!', message: 'Start exploring properties and book your perfect home.', link: '/properties' }
       : { title: 'Welcome to LocaStay!', message: 'List your first property to start receiving verified tenant leads.', link: '/landlord/properties' };
 
   await admin.from('notifications').insert({

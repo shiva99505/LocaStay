@@ -42,20 +42,6 @@ export async function upsertProfile(
   return data;
 }
 
-/** Mark profile KYC status (admin-only action — use admin client). */
-export async function setKycStatus(
-  db: DB,
-  userId: string,
-  status: Profile['kyc_status'],
-): Promise<void> {
-  const { error } = await db
-    .from('profiles')
-    .update({ kyc_status: status })
-    .eq('id', userId);
-
-  if (error) throw new Error(`setKycStatus: ${error.message}`);
-}
-
 /** Suspend / unsuspend a user (admin-only — use admin client). */
 export async function setUserSuspended(
   db: DB,

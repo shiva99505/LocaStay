@@ -11,7 +11,6 @@ export const revalidate = 0;
 const BANNERS = [
   { id: '1', title: 'Diwali Offer — Zero Brokerage', type: 'PROMO', status: 'ACTIVE', from: '2024-10-01', to: '2024-11-05', views: 4820 },
   { id: '2', title: 'New MGNREGA Housing Scheme Available', type: 'NOTICE', status: 'ACTIVE', from: '2024-09-01', to: '2025-01-01', views: 2310 },
-  { id: '3', title: 'Verify Your KYC to Unlock Bookings', type: 'NOTICE', status: 'INACTIVE', from: '2024-07-01', to: '2024-08-31', views: 9210 },
 ];
 
 const BLOG_POSTS = [

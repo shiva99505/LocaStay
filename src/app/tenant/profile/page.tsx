@@ -20,7 +20,6 @@ export default async function ProfilePage() {
   const fields = [
     session.user.name, session.user.email, session.user.phone,
     profile?.dob, profile?.occupation, profile?.address,
-    profile?.aadhaarNumber, profile?.panNumber,
   ];
   const profilePct = Math.round((fields.filter(Boolean).length / fields.length) * 100);
 

@@ -12,7 +12,6 @@ export const revalidate = 0;
 
 const FAQ = [
   { q: 'How do I pay rent online?', a: 'Go to Rent Tracker → Pay Now. We support UPI, NEFT and debit cards. Receipts are auto-generated.' },
-  { q: 'How long does KYC verification take?', a: 'Usually 1–2 business days after uploading Aadhaar and PAN. You\'ll get a notification once approved.' },
   { q: 'Can I cancel a booking request?', a: 'Yes. Go to My Stay → Pending Requests and click Cancel. Once approved, contact your landlord directly.' },
   { q: 'How do I report a landlord issue?', a: 'Use the Complaints page. Our team reviews and mediates within 72 hours for high-priority issues.' },
 ];

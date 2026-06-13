@@ -3,7 +3,7 @@
  */
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/supabase/auth-helpers';
-import { setKycStatus, setUserSuspended } from '@/lib/supabase/profiles';
+import { setUserSuspended } from '@/lib/supabase/profiles';
 import { createNotification } from '@/lib/supabase/notifications';
 import { getAdminClient } from '@/lib/supabase/admin';
 
@@ -34,7 +34,6 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
   if (action === 'VERIFY') {
-    await setKycStatus(admin, targetUserId, 'VERIFIED');
     await admin.from('profiles').update({ is_verified: true }).eq('id', targetUserId);
   } else {
     await setUserSuspended(admin, targetUserId, action === 'SUSPEND');
@@ -42,7 +41,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   await createNotification(admin, {
     userId:  targetUserId,
-    type:    'KYC',
+    type:    'SYSTEM',
     title:   NOTIF_COPY[action].title,
     message: NOTIF_COPY[action].message,
   });
@@ -50,7 +49,7 @@ export async function PATCH(request: Request, { params }: Params) {
   // Audit log
   await admin.from('audit_logs').insert({
     actor_id:    auth.user.id,
-    action:      action === 'VERIFY' ? 'VERIFY_KYC' : action === 'SUSPEND' ? 'SUSPEND_USER' : 'UNSUSPEND_USER',
+    action:      action === 'VERIFY' ? 'VERIFY_USER' : action === 'SUSPEND' ? 'SUSPEND_USER' : 'UNSUSPEND_USER',
     entity_type: 'USER',
     entity_id:   targetUserId,
   });

@@ -4,7 +4,7 @@ import { BrandMark } from '@/components/common/brand-mark';
 
 const PITCH_POINTS = [
   { icon: MapPin, title: 'GPS-mapped listings', text: 'See real distances to schools, hospitals, markets & transit before you commit.' },
-  { icon: ShieldCheck, title: 'Verified landlords & tenants', text: 'KYC, document checks and AI fraud screening keep both sides safe.' },
+  { icon: ShieldCheck, title: 'Verified landlords & tenants', text: 'Document checks and AI fraud screening keep both sides safe.' },
   { icon: FileSignature, title: 'Digital agreements', text: 'Generate, e-sign and store rental agreements without a single trip to a typist.' },
   { icon: Wallet, title: 'Transparent rent tracking', text: 'Auto-reminders, UPI receipts and a full payment history in one place.' },
 ];

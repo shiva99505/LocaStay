@@ -20,7 +20,6 @@ const CATEGORIES = [
   { value: 'ACCOUNT', label: 'Account & Login' },
   { value: 'PAYMENT', label: 'Payment Issue' },
   { value: 'BOOKING', label: 'Booking Problem' },
-  { value: 'KYC', label: 'KYC / Verification' },
   { value: 'TECHNICAL', label: 'Technical / Bug' },
   { value: 'OTHER', label: 'Other' },
 ];

@@ -88,7 +88,7 @@ export function LandlordProfileEditForm({ initial }: LandlordProfileEditFormProp
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Business Profile</DialogTitle>
-            <DialogDescription>Update your landlord profile, bank details and KYC information.</DialogDescription>
+            <DialogDescription>Update your landlord profile and bank details.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">

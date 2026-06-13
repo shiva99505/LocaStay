@@ -11,7 +11,7 @@ export const revalidate = 0;
 
 const TYPE_META: Record<string, { label: string }> = {
   BOOKING: { label: 'Booking' }, PAYMENT: { label: 'Payment' },
-  AGREEMENT: { label: 'Agreement' }, KYC: { label: 'KYC' },
+  AGREEMENT: { label: 'Agreement' },
   SYSTEM: { label: 'System' }, LEAD: { label: 'Lead' }, MAINTENANCE: { label: 'Maintenance' },
 };
 

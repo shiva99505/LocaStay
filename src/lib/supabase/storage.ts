@@ -142,7 +142,7 @@ export async function uploadAvatar(
   return upload(file, 'avatars', userId);
 }
 
-/** Upload a KYC document (private bucket). Returns the storage path only (no public URL). */
+/** Upload a document (private bucket). Returns the storage path only (no public URL). */
 export async function uploadDocument(
   file: File,
   userId: string,

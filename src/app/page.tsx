@@ -20,7 +20,7 @@ const hero = dictionaries.en.hero;
 
 const TRUST_POINTS = [
   { icon: MapPin, title: 'GPS-mapped listings', description: 'Every property is pinned with exact coordinates and verified distances to schools, hospitals, markets and transit.' },
-  { icon: ShieldCheck, title: 'Verified landlords & tenants', description: 'KYC documents, police verification badges and platform reviews keep both sides accountable.' },
+  { icon: ShieldCheck, title: 'Verified landlords & tenants', description: 'Police verification badges and platform reviews keep both sides accountable.' },
   { icon: FileText, title: 'Digital rental agreements', description: 'Generate, e-sign and store legally-formatted agreements — no paperwork runs, no disputes.' },
   { icon: IndianRupee, title: 'Transparent rent tracking', description: 'Automated reminders, UPI payments and a shared ledger so rent never becomes a guessing game.' },
 ];
