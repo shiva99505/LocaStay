@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
   Building2, MapPin, Calendar, IndianRupee, FileText, ChevronRight,
-  Clock, CheckCircle2, Phone, MessageSquare, ExternalLink,
+  Clock, CheckCircle2, ExternalLink,
 } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { BOOKING_STATUS_META, type BookingStatus } from '@/lib/constants';
-import { googleMapsViewUrl, whatsappLink, telLink } from '@/lib/utils';
+import { googleMapsViewUrl } from '@/lib/utils';
+import { ContactLandlordButtons } from '@/components/tenant/contact-landlord-buttons';
 
 export const revalidate = 0;
 
@@ -101,14 +102,11 @@ export default async function MyStayPage() {
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3">
                 <span className="text-sm font-semibold text-foreground">Landlord: {active.property.landlord.user.name}</span>
                 <div className="ml-auto flex gap-2">
-                  <Button asChild variant="outline" size="sm" className="gap-1.5">
-                    <a href={telLink(active.property.landlord.user.phone)}><Phone className="h-3.5 w-3.5" /> Call</a>
-                  </Button>
-                  <Button asChild size="sm" className="gap-1.5 bg-secondary-600 hover:bg-secondary-700">
-                    <a href={whatsappLink(active.property.landlord.user.phone, `Hi, I'm your tenant at ${active.property.title}`)} target="_blank" rel="noopener noreferrer">
-                      <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
-                    </a>
-                  </Button>
+                  <ContactLandlordButtons
+                    phone={active.property.landlord.user.phone ?? ''}
+                    landlordName={active.property.landlord.user.name ?? 'Landlord'}
+                    propertyTitle={active.property.title}
+                  />
                 </div>
               </div>
             )}

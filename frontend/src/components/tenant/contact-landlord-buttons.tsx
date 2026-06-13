@@ -8,13 +8,13 @@ import {
   DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 
-interface Props {
+interface ContactLandlordButtonsProps {
   phone: string;
   landlordName: string;
   propertyTitle: string;
 }
 
-export function CallLandlordButton({ phone, landlordName, propertyTitle }: Props) {
+export function ContactLandlordButtons({ phone, landlordName, propertyTitle }: ContactLandlordButtonsProps) {
   const [callOpen, setCallOpen] = useState(false);
   const [waOpen, setWaOpen] = useState(false);
 

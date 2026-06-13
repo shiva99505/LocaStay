@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
   Building2, MapPin, Calendar, IndianRupee, ChevronRight,
-  Clock, CheckCircle2, MessageSquare, ExternalLink,
+  Clock, CheckCircle2, ExternalLink,
 } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { BOOKING_STATUS_META, type BookingStatus } from '@/lib/constants';
-import { googleMapsViewUrl, whatsappLink } from '@/lib/utils';
+import { googleMapsViewUrl } from '@/lib/utils';
 import { CallLandlordButton } from '@/components/tenant/call-landlord-button';
 
 export const revalidate = 0;
@@ -98,12 +98,8 @@ export default async function MyStayPage() {
                   <CallLandlordButton
                     phone={active.property.landlord.user.phone ?? ''}
                     landlordName={active.property.landlord.user.name ?? 'Landlord'}
+                    propertyTitle={active.property.title}
                   />
-                  <Button asChild size="sm" className="gap-1.5 bg-secondary-600 hover:bg-secondary-700">
-                    <a href={whatsappLink(active.property.landlord.user.phone, `Hi, I'm your tenant at ${active.property.title}`)} target="_blank" rel="noopener noreferrer">
-                      <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
-                    </a>
-                  </Button>
                 </div>
               </div>
             )}
