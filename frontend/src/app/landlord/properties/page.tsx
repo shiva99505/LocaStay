@@ -155,7 +155,7 @@ export default async function LandlordPropertiesPage() {
                       <Link href={`/properties/${prop.id}`}><Eye className="mr-1 h-3 w-3" /> Preview</Link>
                     </Button>
                     <Button asChild size="sm" className="flex-1 bg-secondary-600 text-xs hover:bg-secondary-700">
-                      <Link href="/landlord/properties">Manage</Link>
+                      <Link href={`/landlord/properties/${prop.id}`}>Manage</Link>
                     </Button>
                   </div>
                 </div>
