@@ -21,7 +21,7 @@ export async function PATCH(
 
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
-    include: { property: { select: { title: true } } },
+    include: { property: { select: { id: true, title: true } } },
   });
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
@@ -29,6 +29,13 @@ export async function PATCH(
     where: { id: bookingId },
     data: { status: action, respondedAt: new Date() },
   });
+
+  if (action === 'APPROVED') {
+    await prisma.property.update({
+      where: { id: booking.propertyId },
+      data: { occupiedRooms: { increment: 1 } },
+    });
+  }
 
   await prisma.notification.create({
     data: {

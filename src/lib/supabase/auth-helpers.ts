@@ -17,13 +17,13 @@ export interface SessionUser {
   isVerified: boolean;
 }
 
-interface AuthResult {
+type AuthResult = {
   user:  SessionUser;
   error: null;
 } | {
   user:  null;
   error: NextResponse;
-}
+};
 
 /**
  * Require a signed-in user. Returns { user } or { error: 401 Response }.

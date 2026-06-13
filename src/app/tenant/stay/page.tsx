@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
-  Building2, MapPin, Calendar, IndianRupee, FileText, ChevronRight,
-  Clock, CheckCircle2, Phone, MessageSquare, ExternalLink,
+  Building2, MapPin, Calendar, IndianRupee, ChevronRight,
+  Clock, CheckCircle2, MessageSquare, ExternalLink,
 } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { BOOKING_STATUS_META, type BookingStatus } from '@/lib/constants';
-import { googleMapsViewUrl, whatsappLink, telLink } from '@/lib/utils';
+import { googleMapsViewUrl, whatsappLink } from '@/lib/utils';
+import { CallLandlordButton } from '@/components/tenant/call-landlord-button';
 
 export const revalidate = 0;
 
@@ -28,10 +29,10 @@ export default async function MyStayPage() {
           select: {
             id: true, title: true, address: true, city: true, state: true,
             latitude: true, longitude: true, coverImage: true,
+            rent: true, deposit: true,
             landlord: { select: { user: { select: { name: true, phone: true } } } },
           },
         },
-        agreement: { select: { id: true, status: true, rentAmount: true, startDate: true, endDate: true, depositAmount: true } },
         payments: { select: { status: true, amount: true }, orderBy: { dueDate: 'desc' }, take: 3 },
       },
       orderBy: { requestedAt: 'desc' },
@@ -79,18 +80,13 @@ export default async function MyStayPage() {
                 <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <MapPin className="h-3.5 w-3.5" /> {active.property.address}, {active.property.city}, {active.property.state}
                 </p>
-                {active.agreement && (
-                  <>
-                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {formatDate(active.agreement.startDate)} — {active.agreement.endDate ? formatDate(active.agreement.endDate) : 'Open-ended'}
-                    </p>
-                    <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                      <IndianRupee className="h-3.5 w-3.5" /> {formatCurrency(active.agreement.rentAmount)}/month
-                      <span className="font-normal text-muted-foreground">· Deposit: {formatCurrency(active.agreement.depositAmount)}</span>
-                    </p>
-                  </>
-                )}
+                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5" /> Move-in: {formatDate(active.moveInDate)}
+                </p>
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                  <IndianRupee className="h-3.5 w-3.5" /> {formatCurrency(active.property.rent)}/month
+                  <span className="font-normal text-muted-foreground">· Deposit: {formatCurrency(active.property.deposit)}</span>
+                </p>
               </div>
             </div>
 
@@ -99,9 +95,10 @@ export default async function MyStayPage() {
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3">
                 <span className="text-sm font-semibold text-foreground">Landlord: {active.property.landlord.user.name}</span>
                 <div className="ml-auto flex gap-2">
-                  <Button asChild variant="outline" size="sm" className="gap-1.5">
-                    <a href={telLink(active.property.landlord.user.phone)}><Phone className="h-3.5 w-3.5" /> Call</a>
-                  </Button>
+                  <CallLandlordButton
+                    phone={active.property.landlord.user.phone ?? ''}
+                    landlordName={active.property.landlord.user.name ?? 'Landlord'}
+                  />
                   <Button asChild size="sm" className="gap-1.5 bg-secondary-600 hover:bg-secondary-700">
                     <a href={whatsappLink(active.property.landlord.user.phone, `Hi, I'm your tenant at ${active.property.title}`)} target="_blank" rel="noopener noreferrer">
                       <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
@@ -121,16 +118,9 @@ export default async function MyStayPage() {
               <MapPin className="h-4 w-4" /> View on Google Maps <ExternalLink className="h-3.5 w-3.5" />
             </a>
 
-            <div className="flex flex-wrap gap-2">
-              {active.agreement && (
-                <Button asChild variant="outline" size="sm" className="gap-1.5">
-                  <Link href="/tenant/agreements"><FileText className="h-3.5 w-3.5" /> View Agreement</Link>
-                </Button>
-              )}
-              <Button asChild size="sm" className="gap-1.5">
-                <Link href="/tenant/rent"><IndianRupee className="h-3.5 w-3.5" /> Rent Tracker</Link>
-              </Button>
-            </div>
+            <Button asChild size="sm" className="gap-1.5">
+              <Link href="/tenant/rent"><IndianRupee className="h-3.5 w-3.5" /> Rent Tracker</Link>
+            </Button>
           </CardContent>
         </Card>
       ) : (

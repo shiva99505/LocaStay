@@ -11,7 +11,8 @@ export const revalidate = 0;
 
 const STATUS_STYLE: Record<string, string> = {
   PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15',
-  ACTIVE: 'bg-secondary-100 text-secondary-700 dark:bg-secondary-500/15',
+  APPROVED: 'bg-secondary-100 text-secondary-700 dark:bg-secondary-500/15',
+  REJECTED: 'bg-red-100 text-red-700 dark:bg-red-500/15',
   COMPLETED: 'bg-muted text-muted-foreground',
   CANCELLED: 'bg-red-100 text-red-700 dark:bg-red-500/15',
 };
@@ -44,7 +45,7 @@ export default async function AdminBookingsPage() {
       <div className="grid gap-3 sm:grid-cols-4">
         {[
           { label: 'Pending', key: 'PENDING', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-500/10' },
-          { label: 'Active', key: 'ACTIVE', icon: CheckCircle2, color: 'text-secondary-600', bg: 'bg-secondary-50 dark:bg-secondary-500/10' },
+          { label: 'Approved', key: 'APPROVED', icon: CheckCircle2, color: 'text-secondary-600', bg: 'bg-secondary-50 dark:bg-secondary-500/10' },
           { label: 'Completed', key: 'COMPLETED', icon: BookOpen, color: 'text-muted-foreground', bg: 'bg-muted' },
           { label: 'Cancelled', key: 'CANCELLED', icon: XCircle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-500/10' },
         ].map((s) => (

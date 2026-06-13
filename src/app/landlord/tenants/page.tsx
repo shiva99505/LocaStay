@@ -25,8 +25,7 @@ export default async function LandlordTenantsPage() {
     where: { property: { landlordId: landlordProfile.id } },
     include: {
       tenant: { select: { id: true, name: true, phone: true, avatar: true, isVerified: true, profile: { select: { occupation: true } } } },
-      property: { select: { title: true, city: true } },
-      agreement: { select: { status: true, rentAmount: true, startDate: true } },
+      property: { select: { title: true, city: true, rent: true } },
       payments: { where: { status: { in: ['PENDING', 'OVERDUE'] } }, select: { id: true, amount: true, status: true } },
     },
     orderBy: [{ status: 'asc' }, { requestedAt: 'desc' }],
@@ -57,10 +56,10 @@ export default async function LandlordTenantsPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-          {booking.agreement && (
+          {booking.status === 'APPROVED' && (
             <div className="text-right text-xs">
-              <p className="font-bold text-foreground">{formatCurrency(booking.agreement.rentAmount)}/mo</p>
-              <p className="text-muted-foreground">Since {formatDate(booking.agreement.startDate)}</p>
+              <p className="font-bold text-foreground">{formatCurrency(booking.property.rent)}/mo</p>
+              <p className="text-muted-foreground">Since {formatDate(booking.moveInDate)}</p>
             </div>
           )}
           {booking.payments.length > 0 && (
