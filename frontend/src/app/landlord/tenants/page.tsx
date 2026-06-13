@@ -26,18 +26,29 @@ export default async function LandlordTenantsPage() {
     .single();
   if (!landlordProfile) redirect('/login');
 
-  const { data: bookings = [] } = await supabase
-    .from('bookings')
-    .select(`
-      *,
-      tenant:profiles!tenant_id(id, name, phone, avatar, is_verified, profile:profiles!id(kyc_status, occupation)),
-      property:properties!property_id(title, city),
-      agreement:agreements!booking_id(status, rent_amount, start_date),
-      payments:rent_payments!booking_id(id, amount, status)
-    `)
-    .eq('properties.landlord_id', landlordProfile.id)
-    .order('status', { ascending: true })
-    .order('requested_at', { ascending: false });
+  // Step 1: get property IDs belonging to this landlord
+  const { data: ownedProperties } = await supabase
+    .from('properties')
+    .select('id')
+    .eq('landlord_id', landlordProfile.id);
+
+  const propertyIds = (ownedProperties ?? []).map((p) => p.id);
+
+  // Step 2: fetch bookings for those properties
+  const { data: bookings = [] } = propertyIds.length === 0
+    ? { data: [] }
+    : await supabase
+        .from('bookings')
+        .select(`
+          *,
+          tenant:profiles!tenant_id(id, name, phone, avatar, is_verified, occupation),
+          property:properties!property_id(title, city),
+          agreement:agreements!booking_id(status, rent_amount, start_date),
+          payments:rent_payments!booking_id(id, amount, status)
+        `)
+        .in('property_id', propertyIds)
+        .order('status', { ascending: true })
+        .order('requested_at', { ascending: false });
 
   const active = (bookings ?? []).filter((b) => b.status === 'APPROVED');
   const pending = (bookings ?? []).filter((b) => b.status === 'PENDING');
@@ -59,8 +70,8 @@ export default async function LandlordTenantsPage() {
               {booking.tenant.is_verified && <Badge variant="success" className="gap-0.5 text-[10px] py-0"><ShieldCheck className="h-2.5 w-2.5" /> Verified</Badge>}
             </div>
             <p className="text-xs text-muted-foreground">{booking.property.title} · {booking.property.city}</p>
-            {booking.tenant.profile?.occupation && (
-              <p className="text-xs text-muted-foreground">{booking.tenant.profile.occupation}</p>
+            {booking.tenant.occupation && (
+              <p className="text-xs text-muted-foreground">{booking.tenant.occupation}</p>
             )}
           </div>
         </div>
