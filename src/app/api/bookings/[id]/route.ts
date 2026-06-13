@@ -60,7 +60,7 @@ export async function PATCH(request: Request, { params }: Params) {
         status:     'PENDING',
       };
     });
-    await prisma.rentPayment.createMany({ data: rentPayments, skipDuplicates: true });
+    await prisma.rentPayment.createMany({ data: rentPayments });
 
     await prisma.notification.create({
       data: {

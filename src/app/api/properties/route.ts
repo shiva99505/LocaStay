@@ -27,8 +27,8 @@ export async function GET(request: Request) {
   const featured  = searchParams.get('featured');
   const q         = searchParams.get('q');
 
-  if (city)     where.city  = { contains: city, mode: 'insensitive' };
-  if (state)    where.state = { contains: state, mode: 'insensitive' };
+  if (city)     where.city  = { contains: city };
+  if (state)    where.state = { contains: state };
   if (type)     where.type  = type;
   if (minRent || maxRent) {
     where.rent = {};
@@ -40,10 +40,10 @@ export async function GET(request: Request) {
   if (featured === 'true') where.isFeatured = true;
   if (q) {
     where.OR = [
-      { title:   { contains: q, mode: 'insensitive' } },
-      { city:    { contains: q, mode: 'insensitive' } },
-      { village: { contains: q, mode: 'insensitive' } },
-      { address: { contains: q, mode: 'insensitive' } },
+      { title:   { contains: q } },
+      { city:    { contains: q } },
+      { village: { contains: q } },
+      { address: { contains: q } },
     ];
   }
 
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
       skip,
       take: pageSize,
       include: {
-        amenities: { select: { name: true } },
+        amenities: { select: { label: true } },
         _count: { select: { reviews: true } },
       },
     }),

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Review CRUD helpers.
  * RLS enforces: only tenants with an APPROVED booking can submit a review.

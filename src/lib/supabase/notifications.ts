@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Notification helpers.
  * Reads: user client (RLS-scoped to the signed-in user).

@@ -45,7 +45,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const property = await prisma.property.findUnique({
     where: { id },
-    select: { id: true, landlord: { select: { userId: true } } },
+    select: { id: true, status: true, landlord: { select: { userId: true } } },
   });
 
   if (!property) return NextResponse.json({ error: 'Property not found' }, { status: 404 });
@@ -55,6 +55,25 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+
+  // Landlord can delist (hide from public) or relist their property
+  if (body.action === 'DELIST') {
+    if (property.status !== 'AVAILABLE') {
+      return NextResponse.json({ error: 'Only live properties can be removed from listings.' }, { status: 409 });
+    }
+    const updated = await prisma.property.update({ where: { id }, data: { status: 'DELISTED' } });
+    return NextResponse.json({ property: updated });
+  }
+
+  if (body.action === 'RELIST') {
+    if (property.status !== 'DELISTED') {
+      return NextResponse.json({ error: 'Only delisted properties can be relisted.' }, { status: 409 });
+    }
+    const updated = await prisma.property.update({ where: { id }, data: { status: 'AVAILABLE' } });
+    return NextResponse.json({ property: updated });
+  }
+
   const ALLOWED = [
     'title', 'description', 'type', 'rent', 'deposit', 'address', 'village',
     'city', 'district', 'state', 'pincode', 'latitude', 'longitude', 'totalRooms',
@@ -62,7 +81,6 @@ export async function PATCH(request: Request, { params }: Params) {
     'distanceToSchool', 'distanceToHospital', 'distanceToMarket', 'distanceToBusStand',
   ] as const;
 
-  const body = await request.json().catch(() => ({})) as Record<string, unknown>;
   const safeUpdate = Object.fromEntries(
     Object.entries(body).filter(([k]) => ALLOWED.includes(k as never))
   );

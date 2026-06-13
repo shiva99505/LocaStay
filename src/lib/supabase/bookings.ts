@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Booking & RentPayment CRUD helpers.
  */

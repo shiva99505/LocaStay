@@ -555,42 +555,6 @@ export async function adminRespondToBooking(
   return { success: true };
 }
 
-export async function adminUpdateDocumentStatus(
-  documentId: string,
-  status: 'VERIFIED' | 'REJECTED',
-  reason?: string,
-): Promise<ActionResult> {
-  const session = await auth();
-  if (!session?.user || session.user.role !== 'ADMIN') {
-    return { success: false, error: 'Unauthorized' };
-  }
-
-  const doc = await prisma.document.findUnique({ where: { id: documentId } });
-  if (!doc) return { success: false, error: 'Document not found' };
-
-  await prisma.document.update({
-    where: { id: documentId },
-    data: {
-      status,
-      rejectionReason: status === 'REJECTED' ? reason : undefined,
-    },
-  });
-
-  await prisma.notification.create({
-    data: {
-      userId: doc.userId,
-      type: 'SYSTEM',
-      title: status === 'VERIFIED' ? 'Document Verified' : 'Document Rejected',
-      message:
-        status === 'VERIFIED'
-          ? `Your ${doc.type} document has been verified.`
-          : `Your ${doc.type} document was rejected.${reason ? ` Reason: ${reason}` : ''}`,
-    },
-  });
-
-  revalidatePath('/admin/users');
-  return { success: true };
-}
 
 export async function createSupportTicket(
   subject: string,

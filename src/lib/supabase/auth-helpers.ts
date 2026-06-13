@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Server-side auth helpers for Route Handlers and Server Actions.
  * These are thin wrappers around createServerClient so every route

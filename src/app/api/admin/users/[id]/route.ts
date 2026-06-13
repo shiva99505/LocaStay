@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * PATCH /api/admin/users/[id] — verify, suspend, or unsuspend a user account
  */

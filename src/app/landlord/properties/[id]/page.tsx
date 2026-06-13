@@ -14,6 +14,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { PROPERTY_STATUS_META, BOOKING_STATUS_META, type PropertyStatus, type BookingStatus } from '@/lib/constants';
 import { PropertyEditForm } from '@/components/landlord/property-edit-form';
 import { DeletePropertyButton } from '@/components/landlord/delete-property-button';
+import { DelistPropertyButton } from '@/components/landlord/delist-property-button';
 
 export const revalidate = 0;
 
@@ -62,12 +63,19 @@ export default async function PropertyManagePage({ params }: { params: Promise<{
             <MapPin className="h-3.5 w-3.5" /> {property.address}, {property.city}, {property.state}
           </p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <Button asChild variant="outline" size="sm" className="gap-1.5">
             <Link href={`/properties/${property.id}`} target="_blank" rel="noopener noreferrer">
               <Eye className="h-3.5 w-3.5" /> Preview
             </Link>
           </Button>
+          {(property.status === 'AVAILABLE' || property.status === 'DELISTED') && (
+            <DelistPropertyButton
+              propertyId={property.id}
+              propertyTitle={property.title}
+              currentStatus={property.status}
+            />
+          )}
           <DeletePropertyButton propertyId={property.id} propertyTitle={property.title} />
         </div>
       </div>
