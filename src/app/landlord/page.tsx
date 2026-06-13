@@ -263,7 +263,7 @@ export default async function LandlordDashboard() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg px-2.5 text-xs">
-                            <Link href="/landlord/properties">Manage</Link>
+                            <Link href={`/landlord/properties/${prop.id}`}>Manage</Link>
                           </Button>
                         </td>
                       </tr>

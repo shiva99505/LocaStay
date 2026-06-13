@@ -120,8 +120,11 @@ export default async function LandlordPropertiesPage() {
                     </div>
                   )}
                   <div className="mt-auto flex gap-2 pt-1">
-                    <Button asChild variant="outline" size="sm" className="flex-1 text-xs">
-                      <Link href={`/properties/${prop.id}`}><Eye className="mr-1 h-3 w-3" /> Preview</Link>
+                    <Button asChild size="sm" className="flex-1 text-xs bg-secondary-600 hover:bg-secondary-700">
+                      <Link href={`/landlord/properties/${prop.id}`}>Manage</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="text-xs">
+                      <Link href={`/properties/${prop.id}`}><Eye className="h-3 w-3" /></Link>
                     </Button>
                     <DeletePropertyButton propertyId={prop.id} propertyTitle={prop.title} />
                   </div>
