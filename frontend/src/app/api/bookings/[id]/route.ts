@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 
@@ -22,23 +23,34 @@ export async function PATCH(
     return NextResponse.json({ error: 'action must be APPROVED or REJECTED' }, { status: 400 });
   }
 
+  // Fetch booking fields only — no FK joins to avoid PGRST200 crashes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: booking } = await (admin as any)
     .from('bookings')
-    .select('id, status, tenant_id, property_id, move_in_date, duration_months, property:properties!property_id(id, title, rent, deposit, landlord_id, landlord_profiles!landlord_id(id, user_id))')
+    .select('id, status, tenant_id, property_id, move_in_date, duration_months')
     .eq('id', id)
     .single();
 
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
   if (booking.status !== 'PENDING') return NextResponse.json({ error: 'Booking is no longer pending' }, { status: 409 });
 
-  // Verify requester is the landlord
+  // Fetch property separately
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const prop = booking.property as any;
+  const { data: prop } = await (admin as any)
+    .from('properties')
+    .select('id, title, rent, deposit, landlord_id')
+    .eq('id', booking.property_id)
+    .single();
+
+  // Fetch landlord profile separately
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lp = Array.isArray(prop?.landlord_profiles) ? prop.landlord_profiles[0] : prop?.landlord_profiles as any;
+  const { data: lp } = prop?.landlord_id
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? await (admin as any).from('landlord_profiles').select('id, user_id').eq('id', prop.landlord_id).single()
+    : { data: null };
+
+  // Verify requester is the landlord or admin
   if (!lp || lp.user_id !== user.id) {
-    // Also allow admin role
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -47,25 +59,16 @@ export async function PATCH(
 
   const newStatus = isApprove ? 'APPROVED' : 'REJECTED';
 
-  // Update booking status
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (admin as any)
-    .from('bookings')
-    .update({ status: newStatus, responded_at: new Date().toISOString() })
-    .eq('id', id);
+  const adminDb = admin as any;
+
+  await adminDb.from('bookings').update({ status: newStatus, responded_at: new Date().toISOString() }).eq('id', id);
 
   if (isApprove) {
-    // Increment occupied_rooms on property
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: propData } = await (admin as any)
-      .from('properties').select('occupied_rooms, total_rooms').eq('id', booking.property_id).single();
+    const { data: propData } = await adminDb.from('properties').select('occupied_rooms, total_rooms').eq('id', booking.property_id).single();
     const newOccupied = Math.min((propData?.occupied_rooms ?? 0) + 1, propData?.total_rooms ?? 999);
     const newPropStatus = newOccupied >= (propData?.total_rooms ?? 1) ? 'OCCUPIED' : 'AVAILABLE';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any)
-      .from('properties')
-      .update({ occupied_rooms: newOccupied, status: newPropStatus })
-      .eq('id', booking.property_id);
+    await adminDb.from('properties').update({ occupied_rooms: newOccupied, status: newPropStatus }).eq('id', booking.property_id);
 
     // Calculate end date from duration
     let endDate: string | null = null;
@@ -75,15 +78,10 @@ export async function PATCH(
       endDate = d.toISOString().split('T')[0];
     }
 
-    // Auto-create agreement in Supabase
-    const existingAgreement = await (admin as any)
-      .from('agreements')
-      .select('id')
-      .eq('booking_id', id)
-      .maybeSingle();
+    const existingAgreement = await adminDb.from('agreements').select('id').eq('booking_id', id).maybeSingle();
 
     if (!existingAgreement?.data) {
-      await (admin as any).from('agreements').insert({
+      await adminDb.from('agreements').insert({
         tenant_id:      booking.tenant_id,
         landlord_id:    lp?.id ?? prop?.landlord_id,
         property_id:    booking.property_id,
@@ -96,8 +94,10 @@ export async function PATCH(
       });
     }
 
-    // Notify tenant — agreement ready
-    await (admin as any).from('notifications').insert({
+    // Rent tracker is NOT started automatically — landlord must set it up manually
+    // via the "Setup Rent Tracker" option in the tenants page.
+
+    await adminDb.from('notifications').insert({
       user_id: booking.tenant_id,
       type:    'AGREEMENT',
       title:   'Booking Approved — Agreement Ready',
@@ -105,8 +105,7 @@ export async function PATCH(
       link:    '/tenant/agreements',
     }).catch(() => null);
   } else {
-    // Notify tenant — rejected
-    await (admin as any).from('notifications').insert({
+    await adminDb.from('notifications').insert({
       user_id: booking.tenant_id,
       type:    'BOOKING',
       title:   'Booking Rejected',
@@ -114,6 +113,12 @@ export async function PATCH(
       link:    '/properties',
     }).catch(() => null);
   }
+
+  revalidatePath('/landlord');
+  revalidatePath('/landlord/tenants');
+  revalidatePath('/tenant/stay');
+  revalidatePath('/tenant/rent');
+  revalidatePath(`/properties/${booking.property_id}`);
 
   return NextResponse.json({ success: true, status: newStatus });
 }

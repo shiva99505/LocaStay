@@ -1,5 +1,6 @@
 'use client';
 
+import 'leaflet/dist/leaflet.css';
 import { useEffect, useRef } from 'react';
 
 interface MapPickerProps {
@@ -14,18 +15,21 @@ const PIN_ZOOM = 15;
 
 export function MapPicker({ lat, lng, onChange }: MapPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef    = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    if (!containerRef.current) return;
+    // Destroy any stale instance (React StrictMode mounts twice)
+    if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; markerRef.current = null; }
+
+    let cancelled = false;
 
     // Dynamically import Leaflet (browser only)
     import('leaflet').then((L) => {
+      if (cancelled || !containerRef.current || mapRef.current) return;
+
       // Fix default marker icon paths broken by webpack
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -73,6 +77,7 @@ export function MapPicker({ lat, lng, onChange }: MapPickerProps) {
     });
 
     return () => {
+      cancelled = true;
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current  = null;
@@ -103,19 +108,10 @@ export function MapPicker({ lat, lng, onChange }: MapPickerProps) {
   }, [lat, lng]);
 
   return (
-    <>
-      {/* Leaflet CSS */}
-      <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        // @ts-ignore
-        precedence="default"
-      />
-      <div
-        ref={containerRef}
-        className="h-64 w-full overflow-hidden rounded-xl border border-border"
-        style={{ zIndex: 0 }}
-      />
-    </>
+    <div
+      ref={containerRef}
+      className="h-64 w-full overflow-hidden rounded-xl border border-border"
+      style={{ zIndex: 0 }}
+    />
   );
 }
