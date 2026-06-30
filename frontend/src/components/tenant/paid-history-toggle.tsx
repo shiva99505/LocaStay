@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, Receipt } from 'lucide-react';
-import { cn, formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@/lib/utils';
 
 function displayPeriod(period: string): string {
   if (/^\d{4}-\d{2}$/.test(period)) {

@@ -1,18 +1,39 @@
-import type { Property, Amenity, Review, User, LandlordProfile } from '@prisma/client';
 import type { PropertyStatus, PropertyType } from '@/lib/constants';
 
-/** View-model used by property cards across tenant search, dashboards & comparisons. */
-export type PropertyCardData = Property & {
-  amenities: Amenity[];
-  landlord: LandlordProfile & { user: Pick<User, 'name' | 'avatar' | 'isVerified'> };
-  _count?: { reviews: number; bookings: number };
+/** Generic property card data (Supabase-based, no Prisma). */
+export type PropertyCardData = {
+  id: string;
+  title: string;
+  type: PropertyType;
+  rent: number;
+  village?: string | null;
+  city: string;
+  state: string;
+  cover_image?: string | null;
+  rating?: number | null;
+  review_count?: number | null;
+  is_verified?: boolean;
+  is_featured?: boolean;
+  total_rooms?: number | null;
+  occupied_rooms?: number | null;
+  status?: PropertyStatus;
   distanceKm?: number | null;
   isSaved?: boolean;
 };
 
-/** Full detail view-model for the property detail page. */
 export type PropertyDetailData = PropertyCardData & {
-  reviews: (Review & { tenant: Pick<User, 'name' | 'avatar'> })[];
+  address?: string | null;
+  description?: string | null;
+  amenities?: string[];
+  images?: string[];
+  latitude?: number | null;
+  longitude?: number | null;
+  landlord?: {
+    id: string;
+    name?: string | null;
+    avatar?: string | null;
+    upi_id?: string | null;
+  } | null;
 };
 
 export type SessionUser = {

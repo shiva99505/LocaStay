@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import {
   CheckCircle2, Clock, IndianRupee, AlertTriangle,
-  CalendarDays, Lock, Timer, ShieldAlert, ChevronDown, ChevronUp, Receipt,
+  Lock, Timer, ShieldAlert,
 } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getAdminClient } from '@/lib/supabase/admin';
@@ -268,8 +268,8 @@ export default async function RentTrackerPage() {
   );
 }
 
-function StatusBadge({ isOverdue, inGrace, canPay, activeDays, graceEnds }: {
-  isOverdue: boolean; inGrace: boolean; canPay: boolean;
+function StatusBadge({ isOverdue, inGrace, activeDays, graceEnds }: {
+  isOverdue: boolean; inGrace: boolean; canPay?: boolean;
   activeDays: number | null; graceEnds: string | null;
 }) {
   if (isOverdue) return (

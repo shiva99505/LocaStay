@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   };
 
   const {
-    bookingId, propertyId, tenantId, tenantPhone, tenantName,
+    bookingId, propertyId, tenantId, tenantPhone,
     propertyTitle, startDate, durationMonths, rentAmount, dueDay,
   } = body;
 
